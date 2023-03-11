@@ -14,7 +14,7 @@ pipeline {
         stage('SCM-Checkout') {
             steps {
                 // Get some code from a GitHub repository
-                git 'https://github.com/manju65char/springboot_application_project.git'
+                git 'https://github.com/manju65char/star-agile-banking-finance.git'
 
             }
               post {
