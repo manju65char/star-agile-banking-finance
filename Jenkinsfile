@@ -1,34 +1,71 @@
-
 pipeline {
-    
-    agent {
-        label 'Slave1'
+    agent { 
+        label 'Slave1' 
     }
 
-    tools 
-    {
-        maven 'maven-3.8.7'
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "maven-3.8.7"
     }
+
+    environment {    
+        DOCKERHUB_CREDENTIALS = credentials('dockerloginid')
+    } 
     
     stages {
-        stage('SCM-Checkout') {
+        stage('SCM Checkout') {
             steps {
                 // Get some code from a GitHub repository
-                git 'https://github.com/manju65char/star-agile-banking-finance.git'
-
+                git url: 'https://github.com/manju65char/star-agile-banking-finance.git'
             }
-              post {
-                failure {
-                  sh "echo 'Send mail on failure'"
-                  mail to:"dummyid@gmail.com", from: 'dummyid@gmail.com', subject:"FAILURE: ${currentBuild.fullDisplayName}", body: "we failed."
-                }
-              }
-			}
-        stage('Build with Maven') {
+        }
+        stage('Maven Build') {
             steps {
-                sh 'mvn compile'
-                sh 'mvn test'
-                sh 'mvn package'
+                // Run Maven on a Unix agent.
+                sh "mvn -Dmaven.test.failure.ignore=true clean package"
+            }
+        }
+        stage("Docker build") {
+            steps {
+                sh 'docker version'
+                sh "docker build -t manjunathachar/financeme_app:${BUILD_NUMBER} ."
+                sh 'docker image list'
+                sh "docker tag manjunathachar/financeme_app:${BUILD_NUMBER} manjunathachar/financeme_app:latest"
+            }
+        }
+        stage('Login to Docker Hub') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        stage('Approve - push Image to Docker Hub') {
+            steps {
+                //----------------send an approval prompt-------------
+                script {
+                   env.APPROVED_DEPLOY = input message: 'User input required. Choose "yes" to approve or "Abort" to reject', ok: 'Yes', submitterParameter: 'APPROVER'
+                }
+                //-----------------end approval prompt------------
+            }
+        }
+        stage('Push to Docker Hub') {
+            steps {
+                sh "docker push manjunathachar/financeme_app:latest"
+            }
+        }
+        stage('Approve - Deployment to Kubernetes Cluster') {
+            steps {
+                //----------------send an approval prompt-----------
+                script {
+                   env.APPROVED_DEPLOY_KUBE = input message: 'User input required. Choose "yes" to approve or "Abort" to reject', ok: 'Yes', submitterParameter: 'APPROVER_KUBE'
+                }
+                //-----------------end approval prompt------------
+            }
+        }
+        stage('Deploy to Kubernetes Cluster') {
+            steps {
+                script {
+                   sshPublisher(publishers: [sshPublisherDesc(configName: 'kube_masternode', transfers: [sshTransfer(cleanRemote: false, excludes: '', execCommand: 'kubectl build -f k8sdeployment.yaml', execTimeout: 120000, flatten: false, makeEmptyDirs: false, noDefaultExcludes: false, patternSeparator: '[, ]+', remoteDirectory: '.', remoteDirectorySDF: false, removePrefix: '', sourceFiles: 'k8sdeployment.yaml')], usePromotionTimestamp: false, useWorkspaceInPromotion: false, verbose: false)])                               
+		}
             }
         }
     }
