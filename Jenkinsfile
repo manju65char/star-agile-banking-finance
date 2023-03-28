@@ -28,9 +28,9 @@ pipeline {
         stage("Docker build") {
             steps {
                 sh 'docker version'
-                sh "docker build -t manjunathachar/financeme_app:${BUILD_NUMBER} ."
+                sh "docker build -t manjunathachar/financeapp:${BUILD_NUMBER} ."
                 sh 'docker image list'
-                sh "docker tag manjunathachar/financeme_app:${BUILD_NUMBER} manjunathachar/financeme_app:latest"
+                sh "docker tag manjunathachar/financeapp:${BUILD_NUMBER} manjunathachar/financeapp:latest"
             }
         }
         stage('Login to Docker Hub') {
@@ -49,7 +49,7 @@ pipeline {
         }
         stage('Push to Docker Hub') {
             steps {
-                sh "docker push manjunathachar/financeme_app:latest"
+                sh "docker push manjunathachar/financeapp:latest"
             }
         }
         stage('Approve - Deployment to Kubernetes Cluster') {
