@@ -1,36 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manjunathachar-deploy
+  name: finance-deploy
   labels:
-    app: financeme_app
+    app: financeapp
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: financeme_app
+      app: financeapp
   template:
     metadata:
       labels:
-        app: financeme_app
+        app: financeapp
     spec:
       containers:
       - name: financeme-container
-        image: manjunathachar/financeme_app:latest
+        image: manjunathachar/financeapp:latest
         ports:
         - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: manjunathachar-np-service
+  name: finance-service
   labels:
-    app: financeme_app
+    app: financeapp
 spec:
   selector:
-    app: financeme_app
+    app: financeapp
   type: NodePort
   ports:
-  - nodePort: 31226
-    port: 9093
-    targetPort: 9093
+  - nodePort: 31664
+    port: 8778
+    targetPort: 8778
